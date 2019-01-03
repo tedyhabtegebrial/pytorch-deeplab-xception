@@ -1,0 +1,15 @@
+Experiments:
+
+# Training Segmentation methods
+
+1 - KITTI :- run_7
+	model: run/run_7/models/deeplabv3plus-xception-cityscapes_epoch-600.pth
+2 - Citycapes:- run_8
+	model: run/run_8/models/deeplabv3plus-xception-cityscapes_epoch-129.pth
+3 - CityScapes+KITTI -> run_10
+		description: trained starting from  run/run_7/models/deeplabv3plus-xception-cityscapes_epoch-600.pth
+		model: run/run_10/models/*
+# Testing segmentation
+1. Segmentation is applied on kitti using deeplabv3 trained on kitti only
+	results: '/habtegebrialdata/Datasets/KittiSceneFlow/deeplab/training/image_2'
+2.

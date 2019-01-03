@@ -18,7 +18,8 @@ from torchvision.utils import make_grid
 from tensorboardX import SummaryWriter
 
 # Custom includes
-from dataloaders import cityscapes
+#from dataloaders import cityscapes
+from dataloaders import kitti_plus_cityscapes
 from dataloaders import utils
 from networks import deeplab_xception, deeplab_resnet
 from dataloaders import custom_transforms as tr
@@ -26,7 +27,7 @@ gpu_id = 0
 print('Using GPU: {} '.format(gpu_id))
 # Setting parameters
 nEpochs = 1000  # Number of epochs for training
-resume_epoch = 220  # Default is 0, change if want to resume
+resume_epoch = 0  # Default is 0, change if want to resume
 
 p = OrderedDict()  # Parameters to include in report
 p['trainBatch'] = 3  # Training batch size
@@ -65,14 +66,14 @@ criterion = utils.cross_entropy2d
 
 if resume_epoch == 0:
     print("Training deeplabv3+ from scratch...")
+    net.load_state_dict(torch.load('run/run_7/models/deeplabv3plus-xception-cityscapes_epoch-400.pth',
+               map_location=lambda storage, loc: storage))  # Load all tensors onto the CPU
 else:
-    #print("Initializing weights from: {}...".format(
-    #    os.path.join(save_dir, 'models', modelName + '_epoch-' + str(resume_epoch - 1) + '.pth')))
-    print("Initializing weights from: ..../run/run_8/models/deeplabv3plus-xception-cityscapes_epoch-129.pth")
-    #net.load_state_dict(
-    #    torch.load(os.path.join(save_dir, 'models', modelName + '_epoch-' + str(resume_epoch - 1) + '.pth'),
-    #               map_location=lambda storage, loc: storage))  # Load all tensors onto the CPU
-    net.load_state_dict(torch.load('./run/run_8/models/deeplabv3plus-xception-cityscapes_epoch-129.pth'))
+    print("Initializing weights from: {}...".format(os.path.join(save_dir, 'models', modelName + '_epoch-' + str(resume_epoch - 1) + '.pth')))
+    net.load_state_dict(torch.load(os.path.join(save_dir, 'models', modelName + '_epoch-' + str(resume_epoch - 1) + '.pth'),
+    map_location=lambda storage, loc: storage))  # Load all tensors onto the CPU
+    #net.load_state_dict(torch.load('run/run_7/models/deeplabv3plus-xception-cityscapes_epoch-400.pth',
+    #           map_location=lambda storage, loc: storage))  # Load all tensors onto the CPU
 
 if gpu_id >= 0:
     torch.cuda.set_device(device=gpu_id)
@@ -102,11 +103,11 @@ if resume_epoch != nEpochs:
         tr.Normalize_cityscapes(mean=(72.39, 82.91, 73.16)),
         tr.ToTensor()])
 
-    cityscapes_train = cityscapes.CityscapesSegmentation(split='train',
+    cityscapes_train = kitti_plus_cityscapes.KittiPlusCityscapesSegmentation(split='train',
                                                          transform=composed_transforms_tr)
-    cityscapes_val = cityscapes.CityscapesSegmentation(split='val',
+    cityscapes_val = kitti_plus_cityscapes.KittiPlusCityscapesSegmentation(split='val',
                                                        transform=composed_transforms_ts)
-    cityscapes_test = cityscapes.CityscapesSegmentation(split='test',
+    cityscapes_test = kitti_plus_cityscapes.KittiPlusCityscapesSegmentation(split='test',
                                                         transform=composed_transforms_ts)
 
     trainloader = DataLoader(cityscapes_train, batch_size=p['trainBatch'], shuffle=True, num_workers=0)
@@ -128,8 +129,11 @@ if resume_epoch != nEpochs:
 
     # Main Training and Testing Loop
     for epoch in range(resume_epoch, nEpochs):
-        start_time = timeit.default_timer()
 
+        start_time = timeit.default_timer()
+        if epoch % 100==0:
+            torch.save(net.state_dict(), os.path.join(save_dir, 'models', modelName + '_epoch-' + str(epoch) + '.pth'))
+            print("Save model at {}\n".format( os.path.join(save_dir, 'models', modelName + '_epoch-' + str(epoch) + '.pth')))
         if epoch % p['epoch_size'] == p['epoch_size'] - 1:
             lr_ = utils.lr_poly(p['lr'], epoch, nEpochs, 0.9)
             print('(poly lr policy) learning rate: ', lr_)
@@ -137,7 +141,6 @@ if resume_epoch != nEpochs:
 
         net.train()
         for ii, sample_batched in enumerate(trainloader):
-
             inputs, labels = sample_batched['image'], sample_batched['label']
             # Forward-Backward of the mini-batch
             inputs, labels = Variable(inputs, requires_grad=True), Variable(labels)
@@ -227,10 +230,7 @@ if resume_epoch != nEpochs:
             torch.save(net.state_dict(), os.path.join(save_dir, 'models', modelName + '_epoch-' + str(epoch) + '.pth'))
             print("Save model at {}\n".format(
                 os.path.join(save_dir, 'models', modelName + '_epoch-' + str(epoch) + '.pth')))
-        if(epoch % 100==0):
-            torch.save(net.state_dict(), os.path.join(save_dir, 'models', modelName + '_epoch-' + str(epoch) + '.pth'))
-            print("Save model at {}\n".format(
-                os.path.join(save_dir, 'models', modelName + '_epoch-' + str(epoch) + '.pth')))
+
     writer.close()
 
     if useTest:

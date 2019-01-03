@@ -22,20 +22,21 @@ from dataloaders import cityscapes
 from dataloaders import utils
 from networks import deeplab_xception, deeplab_resnet
 from dataloaders import custom_transforms as tr
+
 gpu_id = 0
 print('Using GPU: {} '.format(gpu_id))
 # Setting parameters
-nEpochs = 1000  # Number of epochs for training
-resume_epoch = 220  # Default is 0, change if want to resume
+nEpochs = 100  # Number of epochs for training
+resume_epoch = 0  # Default is 0, change if want to resume
 
 p = OrderedDict()  # Parameters to include in report
-p['trainBatch'] = 3  # Training batch size
-testBatch = 3  # Testing batch size
+p['trainBatch'] = 4  # Training batch size
+testBatch = 4  # Testing batch size
 useTest = True  # See evolution of the test set when training
-nValInterval = 2  # Run on test set every nTestInterval epochs
+nValInterval = 5  # Run on test set every nTestInterval epochs
 snapshot = 10  # Store a model every snapshot epochs
 p['nAveGrad'] = 1  # Average the gradient of several iterations
-p['lr'] = 2e-7  # Learning rate
+p['lr'] = 1e-7  # Learning rate
 p['wd'] = 5e-4  # Weight decay
 p['momentum'] = 0.9  # Momentum
 p['epoch_size'] = 10  # How many epochs to change learning rate
@@ -66,13 +67,11 @@ criterion = utils.cross_entropy2d
 if resume_epoch == 0:
     print("Training deeplabv3+ from scratch...")
 else:
-    #print("Initializing weights from: {}...".format(
-    #    os.path.join(save_dir, 'models', modelName + '_epoch-' + str(resume_epoch - 1) + '.pth')))
-    print("Initializing weights from: ..../run/run_8/models/deeplabv3plus-xception-cityscapes_epoch-129.pth")
-    #net.load_state_dict(
-    #    torch.load(os.path.join(save_dir, 'models', modelName + '_epoch-' + str(resume_epoch - 1) + '.pth'),
-    #               map_location=lambda storage, loc: storage))  # Load all tensors onto the CPU
-    net.load_state_dict(torch.load('./run/run_8/models/deeplabv3plus-xception-cityscapes_epoch-129.pth'))
+    print("Initializing weights from: {}...".format(
+        os.path.join(save_dir, 'models', modelName + '_epoch-' + str(resume_epoch - 1) + '.pth')))
+    net.load_state_dict(
+        torch.load(os.path.join(save_dir, 'models', modelName + '_epoch-' + str(resume_epoch - 1) + '.pth'),
+                   map_location=lambda storage, loc: storage))  # Load all tensors onto the CPU
 
 if gpu_id >= 0:
     torch.cuda.set_device(device=gpu_id)
@@ -227,10 +226,7 @@ if resume_epoch != nEpochs:
             torch.save(net.state_dict(), os.path.join(save_dir, 'models', modelName + '_epoch-' + str(epoch) + '.pth'))
             print("Save model at {}\n".format(
                 os.path.join(save_dir, 'models', modelName + '_epoch-' + str(epoch) + '.pth')))
-        if(epoch % 100==0):
-            torch.save(net.state_dict(), os.path.join(save_dir, 'models', modelName + '_epoch-' + str(epoch) + '.pth'))
-            print("Save model at {}\n".format(
-                os.path.join(save_dir, 'models', modelName + '_epoch-' + str(epoch) + '.pth')))
+
     writer.close()
 
     if useTest:
@@ -263,3 +259,4 @@ if resume_epoch != nEpochs:
                 print('Loss: %f' % running_loss_ts)
                 print('MIoU: %f\n' % miou)
                 running_loss_ts = 0
+

@@ -254,11 +254,18 @@ class RandomScale(object):
         self.limit = limit
 
     def __call__(self, sample):
+        #print(sample['image'].size)
+        #exit()
         img = sample['image']
         mask = sample['label']
+        if img.size[0]<2000:
+            scale = 2
+        else:
+            scale = random.uniform(self.limit[0], self.limit[1])
+        #img, mask = img.resize((2048, 1024), Image.BILINEAR), mask.resize((2048, 1024), Image.NEAREST)
+
         assert img.size == mask.size
 
-        scale = random.uniform(self.limit[0], self.limit[1])
         w = int(scale * img.size[0])
         h = int(scale * img.size[1])
 

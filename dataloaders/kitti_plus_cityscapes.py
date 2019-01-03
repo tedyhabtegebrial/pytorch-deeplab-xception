@@ -8,7 +8,7 @@ from dataloaders.utils import recursive_glob, decode_segmap
 from mypath import Path
 
 
-class CityscapesSegmentation(data.Dataset):
+class KittiPlusCityscapesSegmentation(data.Dataset):
 
     def __init__(self, root=Path.db_root_dir('cityscapes'), split="train", transform=None):
 
