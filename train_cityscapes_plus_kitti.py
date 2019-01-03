@@ -262,4 +262,4 @@ if resume_epoch != nEpochs:
                 print('Test:')
                 print('Loss: %f' % running_loss_ts)
                 print('MIoU: %f\n' % miou)
-                running_loss_ts = 0
+                running_loss_ts = 2
